@@ -41,9 +41,10 @@ $ git clone https://github.com/vicentereig/exa-ruby
 $ cd exa-ruby
 $ rbenv install 3.4.5   # .ruby-version already pins this
 $ bundle install
-```
 
-Gem name on RubyGems: `exa-ai-ruby`.
+# or install from RubyGems (gem name: exa-ai-ruby)
+$ gem install exa-ai-ruby
+```
 
 Runtime dependencies:
 - `sorbet-runtime` – typed structs/enums and runtime assertions.
