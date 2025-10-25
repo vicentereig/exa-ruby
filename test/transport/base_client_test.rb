@@ -3,44 +3,23 @@
 require "test_helper"
 
 class BaseClientTest < Minitest::Test
-  class FakeRequester
-    attr_reader :requests
-
-    def initialize(responses)
-      @responses = responses
-      @requests = []
-    end
-
-    def execute(request)
-      @requests << request
-      raise "No response stub" if @responses.empty?
-      @responses.shift.call(request)
-    end
-  end
-
-  FakeResponse = Struct.new(:code, :headers) do
-    def each_header(&blk)
-      return headers.each_pair unless blk
-      headers.each_pair(&blk)
-    end
-  end
 
   def build_client(responses)
-    requester = FakeRequester.new(responses)
+    requester = TestSupport::FakeRequester.new(responses)
     client = Exa::Client.new(api_key: "abc", requester: requester, base_url: "https://api.test")
     [client, requester]
   end
 
   def json_response(status:, body:)
     lambda do |_req|
-      response = FakeResponse.new(status.to_s, {"content-type" => "application/json"})
+      response = TestSupport::FakeResponse.new(status.to_s, {"content-type" => "application/json"})
       [status, response, [body].each]
     end
   end
 
   def sse_response(events)
     lambda do |_req|
-      response = FakeResponse.new("200", {"content-type" => "text/event-stream"})
+      response = TestSupport::FakeResponse.new("200", {"content-type" => "text/event-stream"})
       [200, response, events.each]
     end
   end
