@@ -33,6 +33,30 @@ events.each { |evt| puts evt }
 # Websets CRUD
 webset = client.websets.create(name: "Competitive Intelligence")
 
+# Sorbet-driven structured outputs
+class AnswerShape < T::Struct
+  const :headline, String
+  const :key_points, T::Array[String]
+end
+
+answer = client.search.answer(
+  query: "Summarize the latest robotics grants",
+  summary: {schema: AnswerShape}
+)
+answer #=> schema hash generated via dspy-schema so the API enforces your Sorbet type
+
+# Research tasks can stream JSON that matches a Sorbet schema too
+class ResearchShape < T::Struct
+  const :organization, String
+  const :funding_rounds, T::Array[String]
+end
+
+research = client.research.create(
+  instructions: "Map frontier labs & their funders",
+  output_schema: ResearchShape,
+  stream: true
+)
+
 ```
 
 Resources available today:

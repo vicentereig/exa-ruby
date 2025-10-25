@@ -17,6 +17,13 @@ module Exa
           value
         end
       end
+
+      def stringify_string_hash(hash)
+        return nil if hash.nil?
+        hash.each_with_object({}) do |(k, v), acc|
+          acc[k.to_s] = v
+        end
+      end
     end
   end
 end

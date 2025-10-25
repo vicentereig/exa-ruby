@@ -27,6 +27,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "connection_pool", "~> 2.4"
   spec.add_dependency "sorbet-runtime", "~> 0.5"
+  spec.add_dependency "dspy-schema", "~> 1.0"
 
   spec.add_development_dependency "minitest", "~> 5.22"
   spec.add_development_dependency "rake", "~> 13.2"

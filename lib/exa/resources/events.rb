@@ -6,11 +6,20 @@ module Exa
   module Resources
     class Events < Base
       def list(params = nil)
-        client.request(method: :get, path: events_path, query: params, response_model: Exa::Responses::RawResponse)
+        client.request(
+          method: :get,
+          path: events_path,
+          query: params,
+          response_model: Exa::Responses::EventListResponse
+        )
       end
 
       def retrieve(event_id)
-        client.request(method: :get, path: events_path(event_id), response_model: Exa::Responses::RawResponse)
+        client.request(
+          method: :get,
+          path: events_path(event_id),
+          response_model: Exa::Responses::Event
+        )
       end
 
       private

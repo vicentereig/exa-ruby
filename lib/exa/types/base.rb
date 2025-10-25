@@ -6,6 +6,9 @@ module Exa
       module_function
 
       def to_payload(value)
+        schema_payload = Exa::Types::Schema.maybe_convert(value)
+        return schema_payload unless schema_payload.nil?
+
         case value
         when StructWrapper
           value.__exa_attributes__
@@ -27,7 +30,10 @@ module Exa
       def serialize_struct(struct)
         struct.serialize.each_with_object({}) do |(key, val), acc|
           next if val.nil?
-          acc[camelize(key.to_sym)] = to_payload(val)
+          method_name = key.to_sym
+          raw_value = struct.respond_to?(method_name) ? struct.public_send(method_name) : nil
+          schema_value = Exa::Types::Schema.maybe_convert(raw_value)
+          acc[camelize(method_name)] = schema_value.nil? ? to_payload(val) : schema_value
         end
       end
 

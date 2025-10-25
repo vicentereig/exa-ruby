@@ -2,7 +2,14 @@
 
 require "test_helper"
 
+class ExampleSummarySchema < T::Struct
+  const :title, String
+  const :url, String
+  const :is_primary_source, T::Boolean
+end
+
 class SerializerTest < Minitest::Test
+
   def test_search_request_serializes_to_camel_case
     request = Exa::Types::SearchRequest.new(
       query: "latest ai",
@@ -39,9 +46,36 @@ class SerializerTest < Minitest::Test
     assert_equal "exa-research-fast", payload["model"]
   end
 
-  def test_schema_module_defers_when_converter_missing
-    assert_raises(NotImplementedError) do
-      Exa::Types::Schema.to_json_schema(Exa::Types::SearchRequest)
-    end
+  def test_schema_module_generates_json_schema
+    assert_equal "ExampleSummarySchema", ExampleSummarySchema.name
+    schema = Exa::Types::Schema.to_json_schema(ExampleSummarySchema)
+    assert_equal "object", schema[:type]
+    assert_includes schema[:required], "title"
+    assert_equal "string", schema.dig(:properties, :title, :type)
+  end
+
+  def test_serializer_converts_struct_class_to_json_schema
+    options = Exa::Types::SummaryContentsOptions.new(schema: ExampleSummarySchema)
+    payload = options.to_payload
+    schema = payload["schema"]
+    assert_equal "object", schema[:type]
+    assert_includes schema[:required], "url"
+  end
+
+  def test_schema_maybe_convert_for_struct_class
+    schema = Exa::Types::Schema.maybe_convert(ExampleSummarySchema)
+    refute_nil schema
+    assert_equal "object", schema[:type]
+  end
+
+  def test_research_request_accepts_schema_class
+    request = Exa::Types::ResearchCreateRequest.new(
+      instructions: "Map robotics labs",
+      output_schema: ExampleSummarySchema
+    )
+    payload = request.to_payload
+    schema = payload["outputSchema"]
+    assert_equal "object", schema[:type]
+    assert_equal "boolean", schema.dig(:properties, :is_primary_source, :type)
   end
 end

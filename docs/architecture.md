@@ -3,7 +3,8 @@
 ## Goals
 - Deliver a v1 Exa Ruby client whose ergonomics mirror `openai-ruby`, so Sorbet-aware developers get typed resources, model structs, and helpful helpers out of the box.
 - Reuse the architectural patterns from `openai-ruby` (transport, internal type system, structured-output DSL, streaming/pagination helpers) instead of reinventing request/response plumbing.
-- Understand Exa's API surface (search, contents, answers, research, websets, monitors, etc.) plus their JSON-schema-driven endpoints to inform a phased implementation plan. Future v2 work will plug in `dspy-schema`-derived Sorbet types for schema-heavy endpoints.
+- Understand Exa's API surface (search, contents, answers, research, websets, monitors, etc.) plus their JSON-schema-driven endpoints to inform a phased implementation plan. The `dspy-schema` integration now ships in v1, and future v2 work will expand its coverage to every schema-heavy endpoint.
+- Bake Sorbet-generated JSON Schemas (via the new `dspy-schema` gem) directly into v1 so structured outputs (`summary.schema`, `output_schema`, etc.) accept Sorbet types instead of free-form hashes.
 
 ## Reference Implementations Studied
 - `openai-ruby/openai.gemspec` limits runtime dependencies to `connection_pool` and requires Ruby 3.2+. Everything else (Sorbet RBI, SIGs, manifests) ships inside the gem for repeatable builds.
@@ -43,6 +44,7 @@
 - `OpenAI::Helpers::StructuredOutput` (lib/openai/helpers/structured_output.rb) mirrors the `Internal::Type` DSL but narrowed to schema-safe building blocks (`Boolean`, `EnumOf`, `UnionOf`, `ArrayOf`, `BaseModel`).
 - `JsonSchemaConverter` converts DSL-defined models into `$defs`-aware JSON Schemas, handles caching/inlining, and can union in `null` metadata. Helpers such as `to_nilable`, `assoc_meta!`, `cache_def!`, and `to_json_schema_inner` preserve references and metadata (lib/openai/helpers/structured_output/json_schema_converter.rb lines 6–198).
 - `Chat::Completions` uses these converters in `get_structured_output_models` to transform DSL classes into the JSON payload OpenAI expects, and to parse tool call arguments back into typed structs.
+- On the Exa side we now lean on `dspy-schema`: `Exa::Types::Serializer` calls `Exa::Types::Schema.maybe_convert` before dumping payloads, so any Sorbet struct/alias/class passed to fields such as `summary.schema` or `output_schema` is auto-converted via `DSPy::TypeSystem::SorbetJsonSchema`. This keeps structured output ergonomics while letting Sorbet remain the single source of truth.
 
 ### Request parameters, streaming, pagination
 - `OpenAI::RequestOptions` (`lib/openai/request_options.rb`) is itself a `BaseModel` that validates per-request overrides and exposes a Sorbet alias for either the model or a plain hash.
@@ -235,10 +237,12 @@ classDiagram
     ExaJsonSchemaConverter <.. ExaSearchResource : convert schema params
 ```
 
-## V2 Preview (dspy-schema Integration)
-- Extract schema definitions from `dspy.rb` into a standalone `dspy-schema` gem that emits Sorbet types and JSON Schema metadata.
-- Plug those schema classes into Exa endpoints that accept structured outputs (`summary.schema`, Research `outputSchema`). Because `BaseModel` already implements `JsonSchemaConverter`, the Exa client can expose helpers like `schema: Exa::StructuredOutput::SomeShape`.
-- Expand structured output tests to ensure Sorbet + runtime validation stays accurate.
+## Structured Output via dspy-schema
+- The new `dspy-schema` gem (already extracted & published as `dspy-schema 1.0.0`) ships the Sorbet JSON Schema converter that powered DSPy’s tool/runtime pipeline. `exa-ruby` now depends on it directly so the converter is always available.
+- `Exa::Types::Schema.to_json_schema(SomeSorbetType)` wraps `DSPy::TypeSystem::SorbetJsonSchema.type_to_json_schema`, giving us a single entry point for emitting JSON Schema hashes from `T::Struct`, `T::Enum`, aliases, `T::Array`, unions, etc.
+- `Exa::Types::Serializer` now auto-detects schema-like inputs before serializing a payload. Passing a Sorbet struct/class/alias into fields such as `summary: { schema: ... }` or `output_schema: ...` automatically emits the JSON Schema version that the Exa API expects—no manual hash building needed.
+- Request structs that expose schema-related attributes (`SummaryContentsOptions#schema`, `AnswerSummaryOptions#schema`, `ResearchCreateRequest#output_schema`, etc.) therefore “just work” with Sorbet types, delivering the ergonomics we originally scoped for v2 directly in v1.
+- Tests (`test/types/serializer_test.rb`) cover both the raw converter and the serializer hook so we can evolve schema shapes confidently when new endpoints demand more structured outputs.
 
 ## Risks / Open Questions
 - **Spec drift** – OpenAPI specs may lag behind production (same issue OpenAI solves with generated models). Build generation scripts so updating specs regenerates models/resources automatically.

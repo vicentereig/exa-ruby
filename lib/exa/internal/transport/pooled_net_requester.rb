@@ -3,6 +3,7 @@
 require "net/http"
 require "uri"
 require "connection_pool"
+require "etc"
 
 module Exa
   module Internal
