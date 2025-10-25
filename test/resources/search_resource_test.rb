@@ -12,23 +12,26 @@ class SearchResourceTest < Minitest::Test
   end
 
   def test_search_serializes_params
-    @resource.search(query: "ai", num_results: 3)
+    response = @resource.search(query: "ai", num_results: 3)
     request = @requester.requests.last
     assert_equal :post, request[:method]
     assert_equal "https://api.test/search", request[:url].to_s
     assert_equal({"query" => "ai", "numResults" => 3}, JSON.parse(request[:body]))
+    assert_kind_of Exa::Responses::SearchResponse, response
   end
 
   def test_contents_endpoint
-    @resource.contents(urls: ["https://example.com"], text: true)
+    response = @resource.contents(urls: ["https://example.com"], text: true)
     request = @requester.requests.last
     assert_equal "https://api.test/contents", request[:url].to_s
+    assert_kind_of Exa::Responses::ContentsResponse, response
   end
 
   def test_find_similar_endpoint
-    @resource.find_similar(url: "https://example.com")
+    response = @resource.find_similar(url: "https://example.com")
     request = @requester.requests.last
     assert_equal "https://api.test/findSimilar", request[:url].to_s
+    assert_kind_of Exa::Responses::FindSimilarResponse, response
   end
 
   def test_answer_endpoint_merges_query

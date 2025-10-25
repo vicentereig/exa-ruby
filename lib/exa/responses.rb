@@ -1,0 +1,6 @@
+# frozen_string_literal: true
+
+require_relative "responses/helpers"
+require_relative "responses/result"
+require_relative "responses/search_response"
+require_relative "responses/contents_response"

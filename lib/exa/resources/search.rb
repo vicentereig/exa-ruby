@@ -7,17 +7,17 @@ module Exa
     class Search < Base
       def search(params)
         payload = serialize(Exa::Types::SearchRequest, params)
-        client.request(method: :post, path: "search", body: payload)
+        client.request(method: :post, path: "search", body: payload, response_model: Exa::Responses::SearchResponse)
       end
 
       def contents(params)
         payload = serialize(Exa::Types::ContentsRequest, params)
-        client.request(method: :post, path: "contents", body: payload)
+        client.request(method: :post, path: "contents", body: payload, response_model: Exa::Responses::ContentsResponse)
       end
 
       def find_similar(params)
         payload = serialize(Exa::Types::FindSimilarRequest, params)
-        client.request(method: :post, path: "findSimilar", body: payload)
+        client.request(method: :post, path: "findSimilar", body: payload, response_model: Exa::Responses::FindSimilarResponse)
       end
 
       def answer(params)

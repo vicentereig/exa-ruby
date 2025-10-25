@@ -44,7 +44,7 @@ module Exa
           @requester = requester
         end
 
-        def request(method:, path:, query: nil, headers: nil, body: nil, unwrap: nil, stream: false)
+        def request(method:, path:, query: nil, headers: nil, body: nil, unwrap: nil, stream: false, response_model: nil)
           req = build_request(
             method: method,
             path: Array(path).join("/"),
@@ -60,7 +60,8 @@ module Exa
             Exa::Internal::Transport::Stream.new(headers: parsed_headers, stream: stream_enum)
           else
             decoded = Exa::Internal::Util.decode_content(parsed_headers, stream: stream_enum)
-            unwrap ? dig(decoded, unwrap) : decoded
+            coerced = coerce_response(response_model, decoded)
+            unwrap ? dig(coerced, unwrap) : coerced
           end
         end
 
@@ -157,6 +158,12 @@ module Exa
           Array(path).reduce(obj) do |memo, key|
             memo.is_a?(Hash) ? memo[key] : nil
           end
+        end
+
+        def coerce_response(model, data)
+          return data unless model
+          return model.from_hash(data) if model.respond_to?(:from_hash)
+          model.new(data)
         end
       end
     end
