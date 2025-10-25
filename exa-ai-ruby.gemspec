@@ -3,7 +3,7 @@
 require_relative "lib/exa/version"
 
 Gem::Specification.new do |spec|
-  spec.name = "exa"
+  spec.name = "exa-ai-ruby"
   spec.version = Exa::VERSION
   spec.authors = ["Vicente Reig Rincon de Arellano"]
   spec.email = ["hey@vicente.services"]
