@@ -5,12 +5,12 @@ require_relative "lib/exa/version"
 Gem::Specification.new do |spec|
   spec.name = "exa"
   spec.version = Exa::VERSION
-  spec.authors = ["Vicente" ]
-  spec.email = ["support@example.com"]
+  spec.authors = ["Vicente Reig Rincon de Arellano"]
+  spec.email = ["hey@vicente.services"]
 
-  spec.summary = "Ruby client for the Exa API"
-  spec.description = "Work-in-progress Sorbet-friendly Exa API client, inspired by openai-ruby."
-  spec.homepage = "https://github.com/vicente/exa-ruby"
+  spec.summary = "Exa API client in Ruby"
+  spec.description = "Exa API client in Ruby, Sorbet-friendly and inspired by openai-ruby."
+  spec.homepage = "https://github.com/vicentereig/exa-ruby"
   spec.license = "MIT"
 
   spec.required_ruby_version = ">= 3.4.0"
