@@ -16,6 +16,10 @@ module TestSupport
       @requests = []
     end
 
+    def push_responder(responder)
+      @responders << responder
+    end
+
     def execute(request)
       @requests << request
       responder = @responders.shift

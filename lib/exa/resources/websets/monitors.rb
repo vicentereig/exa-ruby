@@ -67,7 +67,7 @@ module Exa
         private
 
         def monitor_path(*parts)
-          ["monitors", *parts]
+          ["v0", "monitors", *parts]
         end
       end
     end

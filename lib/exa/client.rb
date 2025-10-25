@@ -4,7 +4,7 @@ module Exa
   class Client < Exa::Internal::Transport::BaseClient
     DEFAULT_BASE_URL = "https://api.exa.ai"
 
-    attr_reader :api_key, :search, :research, :websets
+    attr_reader :api_key, :search, :research, :websets, :events, :webhooks, :imports
 
     def initialize(
       api_key: ENV["EXA_API_KEY"],
@@ -19,6 +19,9 @@ module Exa
       @search = Exa::Resources::Search.new(client: self)
       @research = Exa::Resources::Research.new(client: self)
       @websets = Exa::Resources::Websets.new(client: self)
+      @events = Exa::Resources::Events.new(client: self)
+      @webhooks = Exa::Resources::Webhooks.new(client: self)
+      @imports = Exa::Resources::Imports.new(client: self)
     end
 
     private

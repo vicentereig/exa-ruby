@@ -14,25 +14,27 @@ class WebsetsResourceTest < Minitest::Test
   def test_create
     @resource.create(name: "My Webset")
     request = @requester.requests.last
-    assert_equal "https://api.test/websets", request[:url].to_s
+    assert_equal "https://api.test/v0/websets", request[:url].to_s
     assert_equal({"name" => "My Webset"}, JSON.parse(request[:body]))
   end
 
   def test_list
     @resource.list(limit: 5)
     request = @requester.requests.last
-    assert_equal "https://api.test/websets?limit=5", request[:url].to_s
+    assert_equal "https://api.test/v0/websets?limit=5", request[:url].to_s
   end
 
   def test_retrieve_update_delete
     @resource.retrieve("ws_123")
-    assert_equal "https://api.test/websets/ws_123", @requester.requests.last[:url].to_s
+    assert_equal "https://api.test/v0/websets/ws_123", @requester.requests.last[:url].to_s
 
     @resource.update("ws_123", name: "Updated")
     assert_equal :patch, @requester.requests.last[:method]
+    assert_equal "https://api.test/v0/websets/ws_123", @requester.requests.last[:url].to_s
 
     @resource.delete("ws_123")
     assert_equal :delete, @requester.requests.last[:method]
+    assert_equal "https://api.test/v0/websets/ws_123", @requester.requests.last[:url].to_s
   end
 
   private

@@ -15,23 +15,29 @@ module Exa
       end
 
       def create(params)
-        client.request(method: :post, path: "websets", body: params)
+        client.request(method: :post, path: websets_path, body: params)
       end
 
       def list(params = nil)
-        client.request(method: :get, path: "websets", query: params)
+        client.request(method: :get, path: websets_path, query: params)
       end
 
       def retrieve(webset_id)
-        client.request(method: :get, path: ["websets", webset_id])
+        client.request(method: :get, path: websets_path(webset_id))
       end
 
       def update(webset_id, params)
-        client.request(method: :patch, path: ["websets", webset_id], body: params)
+        client.request(method: :patch, path: websets_path(webset_id), body: params)
       end
 
       def delete(webset_id)
-        client.request(method: :delete, path: ["websets", webset_id])
+        client.request(method: :delete, path: websets_path(webset_id))
+      end
+
+      private
+
+      def websets_path(*parts)
+        ["v0", "websets", *parts]
       end
     end
   end

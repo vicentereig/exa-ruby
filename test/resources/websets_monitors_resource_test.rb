@@ -15,21 +15,21 @@ class WebsetsMonitorsResourceTest < Minitest::Test
     monitor = @resource.create(websetId: "ws_1", cadence: {type: "daily"})
     assert_kind_of Exa::Responses::Monitor, monitor
     request = @requester.requests.last
-    assert_equal "https://api.test/monitors", request[:url].to_s
+    assert_equal "https://api.test/v0/monitors", request[:url].to_s
   end
 
   def test_list_monitors
     list = @resource.list(websetId: "ws_1")
     assert_kind_of Exa::Responses::MonitorListResponse, list
-    assert_equal "https://api.test/monitors?websetId=ws_1", @requester.requests.last[:url].to_s
+    assert_equal "https://api.test/v0/monitors?websetId=ws_1", @requester.requests.last[:url].to_s
   end
 
   def test_runs_paths
     @resource.runs_list("mon_123")
-    assert_equal "https://api.test/monitors/mon_123/runs", @requester.requests.last[:url].to_s
+    assert_equal "https://api.test/v0/monitors/mon_123/runs", @requester.requests.last[:url].to_s
 
     @resource.runs_get("mon_123", "run_1")
-    assert_equal "https://api.test/monitors/mon_123/runs/run_1", @requester.requests.last[:url].to_s
+    assert_equal "https://api.test/v0/monitors/mon_123/runs/run_1", @requester.requests.last[:url].to_s
   end
 
   private
