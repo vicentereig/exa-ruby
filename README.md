@@ -63,4 +63,4 @@ Resources available today:
 
 - `client.search` – covers `/search`, `/contents`, `/findSimilar`, `/answer`.
 - `client.research` – create/list/get/cancel research tasks, including SSE streaming.
-- `client.websets` – minimal CRUD helpers for `/websets`.
+- `client.websets` – typed CRUD helpers for `/websets`, returning `Exa::Responses::Webset` and `WebsetListResponse`.
