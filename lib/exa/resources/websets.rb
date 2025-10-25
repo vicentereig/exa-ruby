@@ -5,6 +5,15 @@ require_relative "base"
 module Exa
   module Resources
     class Websets < Base
+      autoload :Monitors, "exa/resources/websets/monitors"
+
+      attr_reader :monitors
+
+      def initialize(client:)
+        super
+        @monitors = Exa::Resources::Websets::Monitors.new(client: client)
+      end
+
       def create(params)
         client.request(method: :post, path: "websets", body: params)
       end
