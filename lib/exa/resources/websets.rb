@@ -5,13 +5,17 @@ require_relative "base"
 module Exa
   module Resources
     class Websets < Base
-      autoload :Monitors, "exa/resources/websets/monitors"
+      require_relative "websets/monitors"
+      require_relative "websets/items"
+      require_relative "websets/enrichments"
 
-      attr_reader :monitors
+      attr_reader :monitors, :items, :enrichments
 
       def initialize(client:)
         super
         @monitors = Exa::Resources::Websets::Monitors.new(client: client)
+        @items = Exa::Resources::Websets::Items.new(client: client)
+        @enrichments = Exa::Resources::Websets::Enrichments.new(client: client)
       end
 
       def create(params)

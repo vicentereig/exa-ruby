@@ -102,23 +102,30 @@ module Exa
 
       def fused_enum(enum, &on_close)
         closed = false
-        Enumerator.new do |y|
-          break if closed
-          enum.each { y << _1 }
-        ensure
+        wrapper = Enumerator.new do |y|
+          begin
+            enum.each { y << _1 }
+          ensure
+            unless closed
+              closed = true
+              on_close&.call
+            end
+          end
+        end
+
+        wrapper.define_singleton_method(:close) do
           unless closed
             closed = true
             on_close&.call
           end
         end
+
+        wrapper
       end
 
       def close_fused!(enum)
-        return unless enum.respond_to?(:rewind)
-        enum.rewind
-        begin
-          enum.each { break }
-        rescue StopIteration
+        if enum.respond_to?(:close)
+          enum.close
         end
       end
     end
