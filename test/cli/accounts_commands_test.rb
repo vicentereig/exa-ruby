@@ -11,7 +11,7 @@ class AccountsCommandsTest < Minitest::Test
     super
     setup_aruba
     @project_root = File.expand_path("../..", __dir__)
-    @bundle = File.expand_path("~/.rbenv/shims/bundle")
+    @bundle = ENV.fetch("BUNDLE_COMMAND", "bundle")
     @exe = File.join(@project_root, "exe/exa")
     @config_dir = File.join(expand_path("."), ".exa-cli")
     set_environment_variable("EXA_CONFIG_DIR", @config_dir)
