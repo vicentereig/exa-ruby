@@ -2,20 +2,17 @@
 
 require "test_helper"
 require "json"
-require "tmpdir"
-require "exa/cli"
+require_relative "cli_test_helper"
 
 class SearchCommandsTest < Minitest::Test
+  include CliTestHelper
+
   def setup
-    @tmp_dir = Dir.mktmpdir
-    @config_path = File.join(@tmp_dir, "config.yml")
-    store = Exa::CLI::ConfigStore.new(path: @config_path)
-    store.upsert_account("prod", api_key: "test-key", base_url: "https://cli.test")
-    store.set_default("prod")
+    setup_cli_config
   end
 
   def teardown
-    FileUtils.remove_entry(@tmp_dir)
+    teardown_cli_config
   end
 
   def test_search_run_passes_parameters_and_renders_json
@@ -34,7 +31,7 @@ class SearchCommandsTest < Minitest::Test
 
     Exa::Client.stub(:new, fake_client) do
       stdout, _stderr = capture_io do
-        Exa::CLI::Root.start(["search:run", "latest llms", "--num-results", "5", "--json", "--config", @config_path])
+        Exa::CLI::Root.start(["search:run", "latest llms", "--num-results", "5", "--json", "--config", cli_config_path])
       end
 
       data = JSON.parse(stdout)
@@ -60,7 +57,7 @@ class SearchCommandsTest < Minitest::Test
 
     Exa::Client.stub(:new, fake_client) do
       stdout, _stderr = capture_io do
-        Exa::CLI::Root.start(["search:contents", "--urls", "https://exa.ai", "--json", "--config", @config_path])
+        Exa::CLI::Root.start(["search:contents", "--urls", "https://exa.ai", "--json", "--config", cli_config_path])
       end
 
       data = JSON.parse(stdout)

@@ -137,6 +137,13 @@ Starting with v1.1.0 the gem ships an `exa` executable that mirrors the API surf
 
    Omit `--json` for friendly summaries; include it when scripting so you get the Sorbet structs serialized as plain JSON.
 
+Command families currently available:
+
+- `exa search:*` – run searches, fetch contents, find similar results, or call `/answer` (with optional streaming).
+- `exa research:*` – create/list/get/cancel research runs.
+- `exa websets:*` – manage websets plus nested items, enrichments, and monitors (including monitor runs).
+- `exa imports:*`, `exa events:*`, and `exa webhooks:*` – work with imports, audit events, and webhook endpoints/attempts.
+
 The detailed roadmap, command matrix, and TDD expectations for future CLI work live in [`docs/cli-plan.md`](docs/cli-plan.md). See `test/cli/accounts_commands_test.rb` and `test/cli/search_commands_test.rb` for examples of the required coverage when you add new commands.
 
 ---

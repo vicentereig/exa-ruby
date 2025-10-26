@@ -61,6 +61,23 @@ module Exa
         )
       end
 
+      def cancel(webset_id)
+        client.request(
+          method: :post,
+          path: websets_path(webset_id, "cancel"),
+          response_model: Exa::Responses::Webset
+        )
+      end
+
+      def preview(params)
+        client.request(
+          method: :post,
+          path: ["v0", "websets", "preview"],
+          body: params,
+          response_model: Exa::Responses::Webset
+        )
+      end
+
       private
 
       def websets_path(*parts)
