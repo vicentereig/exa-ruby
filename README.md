@@ -19,7 +19,6 @@ This README doubles as the canonical “llms-full” reference for the project: 
 5. [Structured Output via Sorbet + dspy-schema](#structured-output-via-sorbet--dspy-schema)
 6. [Streaming & Transport Helpers](#streaming--transport-helpers)
 7. [Testing & TDD Plan](#testing--tdd-plan)
-8. [Roadmap / TODOs](#roadmap--todos)
 
 ---
 
@@ -143,7 +142,7 @@ Responses use `Exa::Responses::Research` and `ResearchListResponse`, which prese
 ```ruby
 webset = client.websets.create(name: "Competitive Intelligence")
 webset = client.websets.update(webset.id, title: "Updated title")
-ListResp = client.websets.list(limit: 10)
+list_resp = client.websets.list(limit: 10)
 
 # Items
 items = client.websets.items.list(webset.id, limit: 5)
@@ -237,12 +236,6 @@ Future tests:
 
 ---
 
-## Roadmap / TODOs
-
-1. **Typed coverage for the remaining OpenAPI endpoints** – webhooks attempts detail, events schema typing, structured outputs for additional research events, etc.
-2. **Code generation from OpenAPI specs** – automate request/response struct creation so spec updates can be pulled regularly.
-3. **Transport polish** – retries with `Retry-After`, idempotency keys, better error envelopes mirroring Exa’s payloads.
-4. **README “llms-full” expansion** – continue updating this document as new features land so it remains the single source of truth.
-5. **Release packaging** – ensure `.gem` builds exclude dev artifacts (`pkg/`, `.idea/`, etc.) and publish initial versions to RubyGems.
+---
 
 Have ideas or find gaps? Open an issue or PR in `vicentereig/exa-ruby`—contributions welcome!***
