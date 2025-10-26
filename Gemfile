@@ -10,3 +10,8 @@ group :development do
   gem "minitest", "~> 5.22"
   gem "rubocop", "~> 1.64", require: false
 end
+
+group :test do
+  gem "aruba", "~> 2.3"
+  gem "webmock", "~> 3.25"
+end

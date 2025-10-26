@@ -22,14 +22,19 @@ Gem::Specification.new do |spec|
   spec.files = Dir.glob("{lib}/**/*", File::FNM_DOTMATCH).reject { |f| File.directory?(f) }
   spec.files += %w[README.md CHANGELOG.md LICENSE]
   spec.bindir = "exe"
-  spec.executables = []
+  spec.executables = ["exa"]
   spec.require_paths = ["lib"]
 
   spec.add_dependency "connection_pool", "~> 2.4"
   spec.add_dependency "sorbet-runtime", "~> 0.5"
   spec.add_dependency "dspy-schema", "~> 1.0"
+  spec.add_dependency "thor", "~> 1.3"
+  spec.add_dependency "tty-table", "~> 0.12"
+  spec.add_dependency "pastel", "~> 0.8"
 
   spec.add_development_dependency "minitest", "~> 5.22"
   spec.add_development_dependency "rake", "~> 13.2"
   spec.add_development_dependency "rubocop", "~> 1.64"
+  spec.add_development_dependency "aruba", "~> 2.2"
+  spec.add_development_dependency "webmock", "~> 3.23"
 end

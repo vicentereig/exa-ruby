@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+begin
+  require "bundler/setup"
+rescue LoadError
+  # bundler is optional when installed as a gem
+rescue StandardError => e
+  raise unless defined?(Bundler::GemfileNotFound) && e.is_a?(Bundler::GemfileNotFound)
+end
+
+require "exa/cli"
+
+Exa::CLI::Root.start(ARGV)

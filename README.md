@@ -15,14 +15,15 @@ This README is intentionally exhaustive—LLM agents and humans alike should be 
 1. [Project Goals](#project-goals)
 2. [Environment & Installation](#environment--installation)
 3. [Client Architecture Overview](#client-architecture-overview)
-4. [Typed Resources & Usage Examples](#typed-resources--usage-examples)
+4. [CLI Quickstart](#cli-quickstart)
+5. [Typed Resources & Usage Examples](#typed-resources--usage-examples)
    - [Search stack](#search-stack)
    - [Research](#research)
    - [Websets (core + items + enrichments + monitors)](#websets-core--items--enrichments--monitors)
    - [Events, Imports, Webhooks](#events-imports-webhooks)
-5. [Structured Output via Sorbet + dspy-schema](#structured-output-via-sorbet--dspy-schema)
-6. [Streaming & Transport Helpers](#streaming--transport-helpers)
-7. [Testing & TDD Plan](#testing--tdd-plan)
+6. [Structured Output via Sorbet + dspy-schema](#structured-output-via-sorbet--dspy-schema)
+7. [Streaming & Transport Helpers](#streaming--transport-helpers)
+8. [Testing & TDD Plan](#testing--tdd-plan)
 
 ---
 
@@ -95,7 +96,48 @@ client = Exa::Client.new(
 - Response models live in `lib/exa/responses/*`. Whenever an endpoint returns typed data the resource sets `response_model:` so the client converts the JSON hash into Sorbet structs (e.g., `Exa::Responses::SearchResponse`, `Webset`, `Research`, etc.).
 - Transport stack:
   - `PooledNetRequester` manages per-origin `Net::HTTP` pools via `connection_pool`.
-  - Responses stream through fused enumerators so we can decode JSON/JSONL/SSE lazily and ensure sockets are closed once consumers finish iterating.
+- Responses stream through fused enumerators so we can decode JSON/JSONL/SSE lazily and ensure sockets are closed once consumers finish iterating.
+
+---
+
+## CLI Quickstart
+
+Starting with v1.1.0 the gem ships an `exa` executable that mirrors the API surface defined here. The CLI bootstraps the same typed client, so you get retries, streaming, and Sorbet-backed responses without writing Ruby.
+
+1. **Install / update the gem and confirm the binary**
+
+   ```
+   $ gem install exa-ai-ruby
+   $ exa version
+   exa-ai-ruby 1.1.0
+   ```
+
+2. **Store credentials once** (per account) and let the CLI manage `~/.config/exa/config.yml` (override via `EXA_CONFIG_DIR` or `--config`). Files are chmod’d `0600`.
+
+   ```
+   $ exa accounts:add prod --api-key exa_prod_xxx --base-url https://api.exa.ai
+   $ exa accounts:add staging --api-key exa_stage_xxx --base-url https://staging.exa.ai --no-default
+   $ exa accounts:list
+   * prod        https://api.exa.ai
+     staging     https://staging.exa.ai
+   $ exa accounts:use staging
+   ```
+
+   Every command accepts `--account`, `--api-key`, `--base-url`, `--config`, and `--format`. If omitted they fall back to the config file, environment variables (`EXA_ACCOUNT`, `EXA_API_KEY`, `EXA_BASE_URL`), or defaults.
+
+3. **Call the API from any shell**
+
+   ```
+   # Run a typed search (pipe `--json` to jq or capture raw data)
+   $ exa search:run "latest reasoning LLM papers" --num-results 3 --json
+
+   # Fetch contents for explicit URLs
+   $ exa search:contents --urls https://exa.ai,https://exa.com --json
+   ```
+
+   Omit `--json` for friendly summaries; include it when scripting so you get the Sorbet structs serialized as plain JSON.
+
+The detailed roadmap, command matrix, and TDD expectations for future CLI work live in [`docs/cli-plan.md`](docs/cli-plan.md). See `test/cli/accounts_commands_test.rb` and `test/cli/search_commands_test.rb` for examples of the required coverage when you add new commands.
 
 ---
 
