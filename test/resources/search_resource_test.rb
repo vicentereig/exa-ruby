@@ -4,14 +4,14 @@ require "test_helper"
 
 class SearchResourceTest < Minitest::Test
   def setup
-    @responses = [json_response({results: []})]
-    requester = TestSupport::FakeRequester.new(@responses)
+    requester = TestSupport::FakeRequester.new([])
     @client = Exa::Client.new(api_key: "abc", requester: requester, base_url: "https://api.test")
     @resource = @client.search
     @requester = requester
   end
 
   def test_search_serializes_params
+    @requester.push_responder(json_response({results: []}))
     response = @resource.search(query: "ai", num_results: 3)
     request = @requester.requests.last
     assert_equal :post, request[:method]
@@ -21,6 +21,7 @@ class SearchResourceTest < Minitest::Test
   end
 
   def test_contents_endpoint
+    @requester.push_responder(json_response({results: []}))
     response = @resource.contents(urls: ["https://example.com"], text: true)
     request = @requester.requests.last
     assert_equal "https://api.test/contents", request[:url].to_s
@@ -28,6 +29,7 @@ class SearchResourceTest < Minitest::Test
   end
 
   def test_find_similar_endpoint
+    @requester.push_responder(json_response({results: []}))
     response = @resource.find_similar(url: "https://example.com")
     request = @requester.requests.last
     assert_equal "https://api.test/findSimilar", request[:url].to_s
@@ -35,6 +37,7 @@ class SearchResourceTest < Minitest::Test
   end
 
   def test_answer_endpoint_merges_query
+    @requester.push_responder(json_response(answer_payload))
     @resource.answer(query: "Who funds frontier labs?", search_options: {num_results: 2})
     request = @requester.requests.last
     payload = JSON.parse(request[:body])
@@ -42,12 +45,51 @@ class SearchResourceTest < Minitest::Test
     assert_equal "Who funds frontier labs?", payload.dig("searchOptions", "query")
   end
 
+  def test_answer_returns_typed_response
+    @requester.push_responder(json_response(answer_payload))
+    resp = @resource.answer(query: "Latest robotics grants")
+    assert_kind_of Exa::Responses::AnswerResponse, resp
+    assert_equal "42", resp.answer
+    assert_equal 1, resp.citations.size
+  end
+
+  def test_answer_stream_returns_stream_object
+    events = ["data:{\"answer\":\"partial\"}\n\n"]
+    @requester.push_responder(sse_response(events))
+    stream = @resource.answer(query: "Streamed", stream: true)
+    assert_kind_of Exa::Internal::Transport::Stream, stream
+    payloads = []
+    stream.each_event_json { |evt| payloads << evt[:data] }
+    assert_equal [{answer: "partial"}], payloads
+  end
+
   private
+
+  def answer_payload
+    {
+      answer: "42",
+      citations: [
+        {
+          id: "doc_1",
+          url: "https://example.com",
+          title: "Example"
+        }
+      ],
+      costDollars: {total: 0.01}
+    }
+  end
 
   def json_response(body)
     lambda do |_req|
       response = TestSupport::FakeResponse.new("200", {"content-type" => "application/json"})
       [200, response, [body.to_json].each]
+    end
+  end
+
+  def sse_response(events)
+    lambda do |_req|
+      response = TestSupport::FakeResponse.new("200", {"content-type" => "text/event-stream"})
+      [200, response, events.each]
     end
   end
 end

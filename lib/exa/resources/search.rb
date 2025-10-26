@@ -21,9 +21,16 @@ module Exa
       end
 
       def answer(params)
+        stream = stream_requested?(params)
         normalized = normalize_nested_struct(params, :search_options, Exa::Types::AnswerSearchOptions)
         payload = serialize(Exa::Types::AnswerRequest, normalized)
-        client.request(method: :post, path: "answer", body: payload)
+        client.request(
+          method: :post,
+          path: "answer",
+          body: payload,
+          stream: stream,
+          response_model: stream ? nil : Exa::Responses::AnswerResponse
+        )
       end
 
       private
@@ -38,6 +45,19 @@ module Exa
         merged[key] = struct_class.new(**value)
         merged.delete(key.to_s)
         merged
+      end
+
+      def stream_requested?(params)
+        case params
+        when Hash
+          value = params[:stream]
+          value = params["stream"] if value.nil?
+          !!value
+        when Exa::Types::AnswerRequest
+          !!params.stream
+        else
+          false
+        end
       end
     end
   end

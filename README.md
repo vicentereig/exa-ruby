@@ -212,6 +212,7 @@ Key points:
   - `decode_content` auto-detects JSON/JSONL/SSE vs binary bodies.
   - `decode_lines` + `decode_sse` implement fused enumerators so sockets close exactly once.
 - `PooledNetRequester` calibrates socket timeouts per request deadline and reuses connections via `connection_pool`.
+- Per-request overrides: pass `request_options: {timeout: 30, max_retries: 0, idempotency_key: SecureRandom.uuid}` to `Exa::Client#request` (exposed when constructing custom helpers) for fine-grained control.
 
 See `test/transport/stream_test.rb` for examples.
 

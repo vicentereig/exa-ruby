@@ -6,6 +6,15 @@ module TestSupport
       return headers.each_pair unless blk
       headers.each_pair(&blk)
     end
+
+    def [](key)
+      headers[key] || headers[key.to_s] || headers[key.to_s.downcase]
+    end
+
+    def get_fields(key)
+      value = self[key]
+      value ? [value] : nil
+    end
   end
 
   class FakeRequester

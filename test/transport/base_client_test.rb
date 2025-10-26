@@ -80,4 +80,48 @@ class BaseClientTest < Minitest::Test
     client, requester = build_client([json_response(status: 200, body: {ok: true}.to_json)])
     assert_equal requester, client.requester
   end
+
+  def test_request_options_override_timeout_and_idempotency
+    client, requester = build_client([json_response(status: 200, body: {ok: true}.to_json)])
+    Process.stub(:clock_gettime, 1000.0) do
+      client.request(
+        method: :post,
+        path: "search",
+        request_options: {timeout: 5, idempotency_key: "abc-123"}
+      )
+    end
+    request = requester.requests.last
+    assert_in_delta 1005.0, request[:deadline], 0.0001
+    assert_equal "abc-123", request[:headers]["idempotency-key"]
+  end
+
+  def test_request_options_limit_max_retries
+    responses = [
+      json_response(status: 500, body: {error: "bad"}.to_json),
+      json_response(status: 200, body: {ok: true}.to_json)
+    ]
+    client, requester = build_client(responses)
+    assert_raises(Exa::Errors::APIStatusError) do
+      client.request(method: :get, path: "search", request_options: {max_retries: 0})
+    end
+    assert_equal 1, requester.requests.size
+  end
+
+  def test_retry_after_header_respected
+    failing_lambda = lambda do |_req|
+      response = TestSupport::FakeResponse.new("429", {"content-type" => "application/json", "retry-after" => "2"})
+      [429, response, [{error: "busy"}.to_json].each]
+    end
+    responses = [
+      failing_lambda,
+      json_response(status: 200, body: {ok: true}.to_json)
+    ]
+    client, _requester = build_client(responses)
+    sleeps = []
+    client.stub(:sleep, ->(value) { sleeps << value }) do
+      result = client.request(method: :get, path: "search")
+      assert_equal({ok: true}, result)
+    end
+    assert_equal [2.0], sleeps
+  end
 end

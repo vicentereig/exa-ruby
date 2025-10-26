@@ -17,6 +17,7 @@ module Exa
       const :query, String
       const :summary, T.nilable(AnswerSummaryOptions)
       const :search_options, T.nilable(AnswerSearchOptions)
+      const :stream, T.nilable(T::Boolean)
 
       def to_payload
         payload = Serializer.to_payload(self)

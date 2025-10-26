@@ -44,16 +44,19 @@ module Exa
           @requester = requester
         end
 
-        def request(method:, path:, query: nil, headers: nil, body: nil, unwrap: nil, stream: false, response_model: nil)
+        def request(method:, path:, query: nil, headers: nil, body: nil, unwrap: nil, stream: false, response_model: nil, request_options: nil)
+          options = normalize_request_options(request_options)
           req = build_request(
             method: method,
             path: Array(path).join("/"),
             query: query,
             headers: headers,
-            body: body
+            body: body,
+            request_timeout: options[:timeout],
+            idempotency_key: options[:idempotency_key]
           )
 
-          _, response, stream_enum = send_request(req)
+          _, response, stream_enum = send_request(req, max_retries: options[:max_retries] || max_retries)
           parsed_headers = Exa::Internal::Util.normalized_headers(response.each_header.to_h)
 
           if stream
@@ -77,13 +80,14 @@ module Exa
           cleaned.join("/")
         end
 
-        def build_request(method:, path:, query:, headers:, body:)
+        def build_request(method:, path:, query:, headers:, body:, request_timeout:, idempotency_key:)
           normalized_path = normalize_path(path)
           url = @base_url + normalized_path
           url.query = Exa::Internal::Util.build_query(query)
 
           header_overrides = headers ? headers.each_with_object({}) { |(k, v), acc| acc[k] = v unless v.nil? } : {}
           final_headers = PLATFORM_HEADERS.merge(default_headers).merge(header_overrides)
+          final_headers["idempotency-key"] ||= idempotency_key if idempotency_key
 
           payload = case body
                     when nil
@@ -96,12 +100,14 @@ module Exa
                       JSON.generate(body)
                     end
 
+          effective_timeout = request_timeout || timeout
+
           {
             method: method,
             url: url,
             headers: final_headers,
             body: payload,
-            deadline: Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout,
+            deadline: Process.clock_gettime(Process::CLOCK_MONOTONIC) + effective_timeout,
             max_retries: max_retries
           }
         end
@@ -118,11 +124,11 @@ module Exa
           {}
         end
 
-        def send_request(request, retry_count: 0)
+        def send_request(request, retry_count: 0, max_retries: @max_retries)
           status, response, body_enum = @requester.execute(request)
           if should_retry?(status) && retry_count < max_retries
-            sleep(retry_delay(retry_count))
-            return send_request(request, retry_count: retry_count + 1)
+            sleep(retry_delay(retry_count, response))
+            return send_request(request, retry_count: retry_count + 1, max_retries: max_retries)
           end
 
           if status >= 400
@@ -149,9 +155,34 @@ module Exa
           [408, 409, 429].include?(status) || status >= 500
         end
 
-        def retry_delay(retry_count)
+        def retry_delay(retry_count, response = nil)
+          header_delay = retry_after_delay(response)
+          return header_delay if header_delay
+
           delay = initial_retry_delay * (2**retry_count)
           [delay, max_retry_delay].min
+        end
+
+        def retry_after_delay(response)
+          return nil unless response
+          value = nil
+          if response.respond_to?(:[])
+            value = response["Retry-After"] || response["retry-after"]
+          end
+          unless value
+            if response.respond_to?(:each_header)
+              response.each_header do |k, v|
+                if k.downcase == "retry-after"
+                  value = v
+                  break
+                end
+              end
+            end
+          end
+          return nil unless value
+          parsed = Integer(value) rescue Float(value) rescue nil
+          return nil unless parsed
+          [parsed.to_f, max_retry_delay].min
         end
 
         def dig(obj, path)
@@ -164,6 +195,15 @@ module Exa
           return data unless model
           return model.from_hash(data) if model.respond_to?(:from_hash)
           model.new(data)
+        end
+
+        def normalize_request_options(options)
+          return {} if options.nil?
+          opts = {}
+          opts[:timeout] = options[:timeout] if options[:timeout]
+          opts[:max_retries] = options[:max_retries] if options[:max_retries]
+          opts[:idempotency_key] = options[:idempotency_key] if options[:idempotency_key]
+          opts
         end
       end
     end
