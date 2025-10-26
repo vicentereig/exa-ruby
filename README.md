@@ -125,19 +125,67 @@ Starting with v1.1.0 the gem ships an `exa` executable that mirrors the API surf
 
    Every command accepts `--account`, `--api-key`, `--base-url`, `--config`, and `--format`. If omitted they fall back to the config file, environment variables (`EXA_ACCOUNT`, `EXA_API_KEY`, `EXA_BASE_URL`), or defaults.
 
-3. **Call the API from any shell**
+   3. **Call the API from any shell**
 
-   ```
-   # Run a typed search (pipe `--json` to jq or capture raw data)
-   $ exa search:run "latest reasoning LLM papers" --num-results 3 --json
+      ```
+      # Run a typed search (pipe `--json` to jq or capture raw data)
+      $ exa search:run "latest reasoning LLM papers" --num-results 3 --json
 
-   # Fetch contents for explicit URLs
-   $ exa search:contents --urls https://exa.ai,https://exa.com --json
-   ```
+      # Fetch contents for explicit URLs
+      $ exa search:contents --urls https://exa.ai,https://exa.com --json
 
-   Omit `--json` for friendly summaries; include it when scripting so you get the Sorbet structs serialized as plain JSON.
+      # Stream results as JSON lines (great for logging/piping)
+      $ exa search:run "ai funding" --num-results 2 --format jsonl
+
+      # Share-ready Markdown lists
+      $ exa websets:list --format markdown
+      ```
+
+      Omit `--json` for friendly summaries; include it when scripting so you get the Sorbet structs serialized as plain JSON.
 
    Prefer `--format jsonl` for streaming-friendly logs or `--format markdown` when you want ready-to-share bullet lists/tables.
+
+### Copy-paste CLI examples
+
+```bash
+# 1) Configure credentials once (stored at ~/.config/exa/config.yml)
+exa accounts:add prod --api-key $EXA_API_KEY --base-url https://api.exa.ai
+
+# 2) Run searches with different outputs
+exa search:run "latest reasoning LLM papers" --num-results 5
+exa search:run "biotech funding" --format jsonl | tee results.jsonl
+
+# 3) Inspect resources in Markdown form (perfect for PRs/notes)
+exa websets:list --format markdown
+exa webhooks:list --format markdown
+
+# 4) Use a one-off API key without mutating config
+exa search:contents --urls https://exa.ai --api-key $EXA_API_KEY --json
+```
+
+### Copy-paste API client example
+
+```ruby
+require "exa"
+
+client = Exa::Client.new(api_key: ENV.fetch("EXA_API_KEY"))
+
+search = client.search.search(
+  query: "latest reasoning LLM papers",
+  num_results: 5,
+  text: true
+)
+
+search.results.each do |result|
+  puts "#{result.title} - #{result.url}"
+end
+
+# Websets + monitors
+websets = client.websets.list(limit: 5)
+websets.data.each_with_index do |webset, idx|
+  puts "#{idx + 1}. #{webset.title} (#{webset.id})"
+end
+```
 
 Command families currently available:
 

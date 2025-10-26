@@ -1,7 +1,8 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.1] - 2025-10-26
 - Add CLI output formatters: `--format jsonl` emits one JSON object per line, and `--format markdown` prints share-ready bullet lists/tables.
+- Document copy-paste ready CLI and Ruby API examples in the README so users/LLMs can get started instantly.
 
 ## [1.1.0] - 2025-10-26
 - Add the `exa` CLI entrypoint (installed automatically with the gem) including multi-account credential management and JSON-friendly output helpers.
