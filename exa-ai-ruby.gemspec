@@ -37,4 +37,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rubocop", "~> 1.64"
   spec.add_development_dependency "aruba", "~> 2.2"
   spec.add_development_dependency "webmock", "~> 3.23"
+  spec.add_development_dependency "webrick", "~> 1.8"
 end

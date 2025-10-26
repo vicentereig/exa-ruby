@@ -14,4 +14,5 @@ end
 group :test do
   gem "aruba", "~> 2.3"
   gem "webmock", "~> 3.25"
+  gem "webrick", "~> 1.8"
 end

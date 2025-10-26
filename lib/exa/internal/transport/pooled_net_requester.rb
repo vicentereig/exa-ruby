@@ -47,7 +47,16 @@ module Exa
             end
 
             _, response = enum.next
-            body = Exa::Internal::Util.fused_enum(enum)
+            body_stream = Enumerator.new do |y|
+              loop do
+                begin
+                  y << enum.next
+                rescue StopIteration
+                  break
+                end
+              end
+            end
+            body = Exa::Internal::Util.fused_enum(body_stream)
             [Integer(response.code), response, body]
           end
         end
