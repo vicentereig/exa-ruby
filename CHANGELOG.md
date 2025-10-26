@@ -1,5 +1,8 @@
 # Changelog
 
+## [Unreleased]
+- Add CLI output formatters: `--format jsonl` emits one JSON object per line, and `--format markdown` prints share-ready bullet lists/tables.
+
 ## [1.1.0] - 2025-10-26
 - Add the `exa` CLI entrypoint (installed automatically with the gem) including multi-account credential management and JSON-friendly output helpers.
 - Introduce a secure YAML config store (`~/.config/exa/config.yml`) and CLI commands for `accounts:list`, `accounts:add`, `accounts:use`, and `accounts:remove`.

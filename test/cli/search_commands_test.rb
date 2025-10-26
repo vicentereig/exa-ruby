@@ -68,6 +68,33 @@ class SearchCommandsTest < Minitest::Test
     assert_equal({ urls: ["https://exa.ai"] }, resource.last_contents_params)
   end
 
+  def test_search_run_outputs_jsonl_format
+    fake_result = build_result("Doc 1", "https://example.com")
+    fake_response = Exa::Responses::SearchResponse.new(
+      request_id: "req_jsonl",
+      resolved_search_type: nil,
+      search_type: nil,
+      results: [fake_result],
+      context: nil,
+      cost_dollars: nil
+    )
+    resource = RecordingSearchResource.new(search_response: fake_response)
+    fake_client = Struct.new(:search).new(resource)
+
+    Exa::Client.stub(:new, fake_client) do
+      stdout, _stderr = capture_io do
+        Exa::CLI::Root.start(
+          ["search:run", "latest llms", "--format", "jsonl", "--config", cli_config_path]
+        )
+      end
+
+      lines = stdout.strip.split("\n")
+      assert_equal 1, lines.size
+      data = JSON.parse(lines.first)
+      assert_equal "Doc 1", data["title"]
+    end
+  end
+
   private
 
   def build_result(title, url)

@@ -137,6 +137,8 @@ Starting with v1.1.0 the gem ships an `exa` executable that mirrors the API surf
 
    Omit `--json` for friendly summaries; include it when scripting so you get the Sorbet structs serialized as plain JSON.
 
+   Prefer `--format jsonl` for streaming-friendly logs or `--format markdown` when you want ready-to-share bullet lists/tables.
+
 Command families currently available:
 
 - `exa search:*` – run searches, fetch contents, find similar results, or call `/answer` (with optional streaming).

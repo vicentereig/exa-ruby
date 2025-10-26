@@ -5,6 +5,7 @@ require "json"
 require "exa"
 require_relative "config_store"
 require_relative "account_resolver"
+require_relative "formatters"
 
 module Exa
   module CLI
@@ -69,7 +70,7 @@ module Exa
       class_option :api_key, type: :string, desc: "Override the API key for this invocation"
       class_option :base_url, type: :string, desc: "Override the API base URL"
       class_option :config, type: :string, desc: "Path to the exa CLI config file"
-      class_option :format, type: :string, default: "table", desc: "Output format: table, json, or raw"
+      class_option :format, type: :string, default: "table", desc: "Output format: table, json, jsonl, or markdown"
 
       # Version -----------------------------------------------------------------
 
@@ -631,24 +632,10 @@ module Exa
 
         def render_response(response, json:, collection_accessor: nil)
           payload = serializable(response)
-          if json
-            say JSON.pretty_generate(payload)
-            return
-          end
-
           collection = extract_collection(response, payload, collection_accessor)
-          if collection
-            if collection.empty?
-              say "No results."
-            else
-              collection.each_with_index do |item, index|
-                say format_collection_entry(item, index)
-              end
-            end
-            return
-          end
-
-          say format_single_entry(payload)
+          formatter_name = determine_format(json)
+          formatter = Exa::CLI::Formatters.for(formatter_name)
+          formatter.render(cli: self, payload: payload, collection: collection)
         end
 
         def render_stream(stream, json:)
@@ -800,3 +787,8 @@ module Exa
     end
   end
 end
+        def determine_format(json_requested)
+          return "json" if json_requested
+          value = options[:format]
+          value.nil? ? "table" : value.to_s.downcase
+        end

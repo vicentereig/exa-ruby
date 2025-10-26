@@ -56,6 +56,26 @@ class WebsetsCommandsTest < Minitest::Test
     end
   end
 
+  def test_websets_list_outputs_markdown
+    list_response = Exa::Responses::WebsetListResponse.new(
+      data: [sample_webset],
+      has_more: false,
+      next_cursor: nil
+    )
+    resource = RecordingWebsetsResource.new(list_response: list_response)
+    fake_client = build_client(websets: resource)
+
+    Exa::Client.stub(:new, fake_client) do
+      stdout, _stderr = capture_io do
+        Exa::CLI::Root.start([
+                               "websets:list", "--format", "markdown", "--config", cli_config_path
+                             ])
+      end
+
+      assert_includes stdout, "- Example (webset_123)"
+    end
+  end
+
   private
 
   def sample_webset
@@ -99,16 +119,22 @@ class WebsetsCommandsTest < Minitest::Test
   end
 
   class RecordingWebsetsResource
-    attr_reader :last_create_payload, :items_resource
+    attr_reader :last_create_payload, :items_resource, :list_called
 
-    def initialize(create_response: nil, items_list_response: nil)
+    def initialize(create_response: nil, items_list_response: nil, list_response: nil)
       @create_response = create_response
       @items_resource = RecordingItemsResource.new(items_list_response)
+      @list_response = list_response
     end
 
     def create(params)
       @last_create_payload = params
       @create_response
+    end
+
+    def list(_params = nil)
+      @list_called = true
+      @list_response
     end
 
     def items
