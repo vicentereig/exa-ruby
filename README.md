@@ -1,8 +1,12 @@
 # Exa Ruby Client
 
+[![Gem Version](https://img.shields.io/gem/v/exa-ai-ruby)](https://rubygems.org/gems/exa-ai-ruby)
+[![Total Downloads](https://img.shields.io/gem/dt/exa-ai-ruby)](https://rubygems.org/gems/exa-ai-ruby)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/vicentereig/exa-ruby/ruby.yml?branch=main&label=tests)](https://github.com/vicentereig/exa-ruby/actions/workflows/ruby.yml)
+
 > Typed, Sorbet-friendly Ruby bindings for the Exa API, inspired by `openai-ruby` and aligned with Exa’s OpenAPI specs.
 
-This README doubles as the canonical “llms-full” reference for the project: it documents the architecture, the current API surface, and the functional-programming patterns we’re porting from OpenAI’s client. If you’re building the Exa Ruby SDK—or just trying to understand how to extend it—start here.
+This README is intentionally exhaustive—LLM agents and humans alike should be able to read it and learn how to use or extend the client without digging elsewhere.
 
 ---
 
@@ -40,9 +44,23 @@ $ git clone https://github.com/vicentereig/exa-ruby
 $ cd exa-ruby
 $ rbenv install 3.4.5   # .ruby-version already pins this
 $ bundle install
+```
 
-# or install from RubyGems (gem name: exa-ai-ruby)
+### Install via RubyGems
+
+```
 $ gem install exa-ai-ruby
+```
+
+### Install via Bundler
+
+```ruby
+# Gemfile
+gem "exa-ai-ruby", "~> 1.0"
+```
+
+```
+$ bundle install
 ```
 
 Runtime dependencies:
@@ -51,6 +69,8 @@ Runtime dependencies:
 - `dspy-schema` – converts Sorbet types to JSON Schema (structured output support).
 
 Set the API key via `EXA_API_KEY` or pass `api_key:` when instantiating `Exa::Client`.
+
+If you are building automation that calls this README (e.g., using `curl`/`wget` or a retrieval plug‑in), fetch the raw file from GitHub: `https://raw.githubusercontent.com/vicentereig/exa-ruby/main/README.md`.
 
 ---
 
