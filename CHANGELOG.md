@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.1.2] - 2025-10-27
+- Broaden support to Ruby 3.1+ by relaxing the gem's minimum Ruby requirement.
+
 ## [1.1.1] - 2025-10-26
 - Add CLI output formatters: `--format jsonl` emits one JSON object per line, and `--format markdown` prints share-ready bullet lists/tables.
 - Document copy-paste ready CLI and Ruby API examples in the README so users/LLMs can get started instantly.
