@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.1.3] - 2025-10-30
+- Extend compatibility down to Ruby 3.0.x by lowering the minimum required Ruby version.
+
 ## [1.1.2] - 2025-10-27
 - Broaden support to Ruby 3.1+ by relaxing the gem's minimum Ruby requirement.
 
