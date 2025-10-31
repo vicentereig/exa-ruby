@@ -69,6 +69,37 @@ Runtime dependencies:
 - `connection_pool` – `Net::HTTP` pooling in `PooledNetRequester`.
 - `dspy-schema` – converts Sorbet types to JSON Schema (structured output support).
 
+### Optional: Async transports
+
+To integrate with Ruby’s `async` scheduler, add the optional dependencies and inject the provided requester:
+
+```ruby
+# Gemfile
+gem "async", "~> 2.6"
+gem "async-http", "~> 0.92"
+```
+
+```ruby
+require "async"
+require "exa/internal/transport/async_requester"
+require "exa"
+
+Async do
+  requester = Exa::Internal::Transport::AsyncRequester.new
+  client = Exa::Client.new(api_key: ENV.fetch("EXA_API_KEY"), requester: requester)
+
+  search_task = Async { client.search.search(query: "autonomous robotics", num_results: 3) }
+  research_task = Async { client.research.create(instructions: "Track major AI policy updates.") }
+
+  puts search_task.wait.results.first.title
+  puts research_task.wait.id
+ensure
+  requester.close
+end
+```
+
+The async requester preserves the same typed resources and streaming helpers, so switching between synchronous and asynchronous transports is a single constructor change.
+
 Set the API key via `EXA_API_KEY` or pass `api_key:` when instantiating `Exa::Client`.
 
 If you are building automation that calls this README (e.g., using `curl`/`wget` or a retrieval plug‑in), fetch the raw file from GitHub: `https://raw.githubusercontent.com/vicentereig/exa-ruby/main/README.md`.

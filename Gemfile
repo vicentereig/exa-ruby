@@ -16,3 +16,8 @@ group :test do
   gem "webmock", "~> 3.25"
   gem "webrick", "~> 1.8"
 end
+
+group :development, :test do
+  gem "async", "~> 2.6"
+  gem "async-http", "~> 0.92"
+end

@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.0] - 2025-10-31
+- Add `Exa::Internal::Transport::AsyncRequester`, enabling optional fiber-scheduler-friendly HTTP via the `async` ecosystem.
+- Document async usage in the README with Gemfile requirements and concurrent request example.
+- Cover the new requester with Minitest specs and wire optional development/test dependencies so contributors can run the async suite locally.
+
 ## [1.1.3] - 2025-10-30
 - Extend compatibility down to Ruby 3.0.x by lowering the minimum required Ruby version.
 
