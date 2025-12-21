@@ -39,7 +39,7 @@ module Exa
       const :highlights, T.nilable(T::Array[String])
       const :highlight_scores, T.nilable(T::Array[Float])
       const :summary, T.nilable(String)
-      const :subpages, T.nilable(T::Array[Result])
+      const :subpages, T.nilable(T::Array[ResultWithContent])
       const :extras, T.nilable(T::Hash[String, T.untyped])
 
       def self.from_hash(hash)
