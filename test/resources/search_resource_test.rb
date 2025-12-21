@@ -28,6 +28,34 @@ class SearchResourceTest < Minitest::Test
     assert_kind_of Exa::Responses::ContentsResponse, response
   end
 
+  def test_contents_parses_subpages_as_result_with_content
+    response_with_subpages = {
+      results: [{
+        url: "https://example.com",
+        id: "abc123",
+        title: "Main Page",
+        text: "Main content",
+        subpages: [{
+          url: "https://example.com/sub",
+          id: "sub123",
+          title: "Subpage",
+          text: "Subpage content",
+          highlights: ["important text"]
+        }]
+      }]
+    }
+    @requester.push_responder(json_response(response_with_subpages))
+    response = @resource.contents(urls: ["https://example.com"], text: true, subpages: 1)
+
+    result = response.results.first
+    assert_equal 1, result.subpages.size
+
+    subpage = result.subpages.first
+    assert_kind_of Exa::Responses::ResultWithContent, subpage
+    assert_equal "Subpage content", subpage.text
+    assert_equal ["important text"], subpage.highlights
+  end
+
   def test_find_similar_endpoint
     @requester.push_responder(json_response({results: []}))
     response = @resource.find_similar(url: "https://example.com")
