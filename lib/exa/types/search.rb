@@ -61,13 +61,33 @@ module Exa
       const :image_links, T.nilable(Integer)
     end
 
+    # Content options that get wrapped in a `contents` object for the API
+    CONTENT_OPTION_KEYS = %i[text highlights summary context].freeze
+
     class SearchRequest < T::Struct
       include StructWrapper
       include SearchOptionProps
       const :query, String
 
       def to_payload
-        Serializer.to_payload(self)
+        payload = Serializer.to_payload(self)
+        wrap_contents_options(payload)
+      end
+
+      private
+
+      def wrap_contents_options(payload)
+        contents = {}
+
+        CONTENT_OPTION_KEYS.each do |key|
+          camel_key = Serializer.camelize(key)
+          next unless payload.key?(camel_key)
+
+          contents[camel_key] = payload.delete(camel_key)
+        end
+
+        payload["contents"] = contents unless contents.empty?
+        payload
       end
     end
   end

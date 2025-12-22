@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.2] - 2025-12-22
+- **BUGFIX**: Fix text/highlights/summary/context extraction in search results.
+  - The Exa API requires these options to be wrapped in a `contents` object.
+  - Previously, passing `text: true` or `text: {max_characters: 1000}` would silently return no text.
+  - Now correctly serializes to `{"contents": {"text": ...}}` as the API expects.
+
 ## [1.2.0] - 2025-10-31
 - Add `Exa::Internal::Transport::AsyncRequester`, enabling optional fiber-scheduler-friendly HTTP via the `async` ecosystem.
 - Document async usage in the README with Gemfile requirements and concurrent request example.

@@ -22,7 +22,7 @@ class SerializerTest < Minitest::Test
     assert_equal "latest ai", payload["query"]
     assert_equal 5, payload["numResults"]
     assert_equal 10, payload["livecrawlTimeout"]
-    assert_equal 1000, payload.dig("text", "maxCharacters")
+    assert_equal 1000, payload.dig("contents", "text", "maxCharacters")
   end
 
   def test_find_similar_serializes_flags
