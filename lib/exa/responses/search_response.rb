@@ -8,7 +8,7 @@ module Exa
       const :search_type, T.nilable(String)
       const :results, T::Array[ResultWithContent]
       const :context, T.nilable(String)
-      const :cost_dollars, T.nilable(T.any(Float, T::Hash[Symbol, T.untyped]))
+      const :cost_dollars, T.nilable(CostDollars)
 
       def self.from_hash(hash)
         sym = Helpers.symbolize_keys(hash)
@@ -18,21 +18,8 @@ module Exa
           search_type: sym[:searchType],
           results: Array(sym[:results]).map { ResultWithContent.from_hash(_1) },
           context: sym[:context],
-          cost_dollars: normalize_cost(sym[:costDollars])
+          cost_dollars: CostDollars.from_hash(sym[:costDollars])
         )
-      end
-
-      def self.normalize_cost(value)
-        case value
-        when nil
-          nil
-        when Numeric
-          value.to_f
-        when Hash
-          Exa::Responses::Helpers.symbolize_keys(value)
-        else
-          value
-        end
       end
     end
 
@@ -40,7 +27,7 @@ module Exa
       const :request_id, T.nilable(String)
       const :results, T::Array[ResultWithContent]
       const :context, T.nilable(String)
-      const :cost_dollars, T.nilable(Float)
+      const :cost_dollars, T.nilable(CostDollars)
 
       def self.from_hash(hash)
         sym = Helpers.symbolize_keys(hash)
@@ -48,7 +35,7 @@ module Exa
           request_id: sym[:requestId],
           results: Array(sym[:results]).map { ResultWithContent.from_hash(_1) },
           context: sym[:context],
-          cost_dollars: sym[:costDollars]&.to_f
+          cost_dollars: CostDollars.from_hash(sym[:costDollars])
         )
       end
     end

@@ -23,7 +23,8 @@ This README is intentionally exhaustive—LLM agents and humans alike should be 
    - [Events, Imports, Webhooks](#events-imports-webhooks)
 6. [Structured Output via Sorbet + dspy-schema](#structured-output-via-sorbet--dspy-schema)
 7. [Streaming & Transport Helpers](#streaming--transport-helpers)
-8. [Testing & TDD Plan](#testing--tdd-plan)
+8. [Instrumentation & Cost Tracking](#instrumentation--cost-tracking)
+9. [Testing & TDD Plan](#testing--tdd-plan)
 
 ---
 
@@ -364,6 +365,150 @@ Key points:
 - Per-request overrides: pass `request_options: {timeout: 30, max_retries: 0, idempotency_key: SecureRandom.uuid}` to `Exa::Client#request` (exposed when constructing custom helpers) for fine-grained control.
 
 See `test/transport/stream_test.rb` for examples.
+
+---
+
+## Instrumentation & Cost Tracking
+
+The gem includes a built-in instrumentation system for tracking API usage and costs. Events are emitted around every API request, and you can subscribe to them for logging, monitoring, or cost management.
+
+### Basic Cost Tracking
+
+```ruby
+require "exa"
+
+client = Exa::Client.new(api_key: ENV.fetch("EXA_API_KEY"))
+
+# Create and subscribe a cost tracker
+tracker = Exa::Instrumentation::CostTracker.new
+tracker.subscribe
+
+# Make API calls - costs are tracked automatically
+response = client.search.search(query: "AI papers", num_results: 10)
+puts response.cost_dollars&.total  # => 0.005
+
+client.search.contents(urls: ["https://example.com"], text: true)
+
+# Check accumulated costs
+puts tracker.total_cost     # => 0.006
+puts tracker.request_count  # => 2
+puts tracker.average_cost   # => 0.003
+
+# Get breakdown by endpoint
+tracker.summary.each do |endpoint, cost|
+  puts "#{endpoint.serialize}: $#{cost}"
+end
+# => search: $0.005
+# => contents: $0.001
+
+# Print a formatted report
+puts tracker.report
+
+# Reset tracking
+tracker.reset!
+
+# Unsubscribe when done
+tracker.unsubscribe
+```
+
+### Custom Event Subscribers
+
+Subscribe to specific events using wildcard patterns:
+
+```ruby
+# Subscribe to all request events
+Exa.instrumentation.subscribe("exa.request.*") do |event_name, payload|
+  case event_name
+  when "exa.request.start"
+    puts "Starting #{payload.endpoint.serialize} request..."
+  when "exa.request.complete"
+    puts "Completed in #{payload.duration_ms.round(2)}ms, cost: $#{payload.cost_dollars}"
+  when "exa.request.error"
+    puts "Error: #{payload.error_class} - #{payload.error_message}"
+  end
+end
+
+# Subscribe to specific events
+Exa.instrumentation.subscribe("exa.request.error") do |_name, payload|
+  ErrorTracker.notify(payload.error_class, payload.error_message)
+end
+```
+
+### Building Custom Subscribers
+
+Extend `BaseSubscriber` for reusable instrumentation:
+
+```ruby
+class BudgetGuard < Exa::Instrumentation::BaseSubscriber
+  def initialize(budget_limit)
+    @budget = budget_limit
+    @spent = 0.0
+    @mutex = Mutex.new
+    super()
+  end
+
+  def subscribe
+    add_subscription("exa.request.complete") do |_name, payload|
+      next unless payload.cost_dollars
+
+      @mutex.synchronize do
+        @spent += payload.cost_dollars
+        raise "Budget exceeded! Spent $#{@spent} of $#{@budget}" if @spent > @budget
+      end
+    end
+  end
+
+  attr_reader :spent
+end
+
+guard = BudgetGuard.new(1.00)  # $1 budget
+guard.subscribe
+# ... make API calls ...
+guard.unsubscribe
+```
+
+### Event Types
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `exa.request.start` | `RequestStart` | Emitted when a request begins |
+| `exa.request.complete` | `RequestComplete` | Emitted on successful completion |
+| `exa.request.error` | `RequestError` | Emitted when a request fails |
+
+**RequestStart** fields: `request_id`, `endpoint`, `http_method`, `path`, `timestamp`
+
+**RequestComplete** fields: `request_id`, `endpoint`, `duration_ms`, `status`, `cost_dollars`, `timestamp`
+
+**RequestError** fields: `request_id`, `endpoint`, `duration_ms`, `error_class`, `error_message`, `timestamp`
+
+### Async Compatibility
+
+The instrumentation system is thread-safe and works inside `Async` blocks:
+
+```ruby
+require "async"
+require "exa/internal/transport/async_requester"
+
+tracker = Exa::Instrumentation::CostTracker.new
+tracker.subscribe
+
+Async do
+  requester = Exa::Internal::Transport::AsyncRequester.new
+  client = Exa::Client.new(api_key: ENV.fetch("EXA_API_KEY"), requester: requester)
+
+  # Concurrent requests - all tracked safely
+  tasks = 5.times.map do |i|
+    Async { client.search.search(query: "query #{i}", num_results: 3) }
+  end
+  tasks.each(&:wait)
+
+  puts "Total cost for #{tracker.request_count} requests: $#{tracker.total_cost}"
+ensure
+  requester.close
+end
+
+tracker.unsubscribe
+```
 
 ---
 

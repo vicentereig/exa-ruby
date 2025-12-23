@@ -18,7 +18,7 @@ module Exa
       const :results, T::Array[ResultWithContent]
       const :context, T.nilable(String)
       const :statuses, T.nilable(T::Array[ContentStatus])
-      const :cost_dollars, T.nilable(Float)
+      const :cost_dollars, T.nilable(CostDollars)
 
       def self.from_hash(hash)
         sym = Helpers.symbolize_keys(hash)
@@ -27,7 +27,7 @@ module Exa
           results: Array(sym[:results]).map { ResultWithContent.from_hash(_1) },
           context: sym[:context],
           statuses: sym[:statuses]&.map { ContentStatus.from_hash(_1) },
-          cost_dollars: sym[:costDollars]&.to_f
+          cost_dollars: CostDollars.from_hash(sym[:costDollars])
         )
       end
     end

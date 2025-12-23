@@ -3,6 +3,7 @@
 require "uri"
 require "cgi"
 require "json"
+require "securerandom"
 
 require_relative "../util"
 require_relative "pooled_net_requester"
@@ -45,10 +46,17 @@ module Exa
         end
 
         def request(method:, path:, query: nil, headers: nil, body: nil, unwrap: nil, stream: false, response_model: nil, request_options: nil)
+          request_id = SecureRandom.uuid
+          path_str = Array(path).join("/")
+          endpoint = Exa::Instrumentation::Endpoint.from_path(path_str)
+          start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+          emit_request_start(request_id, endpoint, method, path_str)
+
           options = normalize_request_options(request_options)
           req = build_request(
             method: method,
-            path: Array(path).join("/"),
+            path: path_str,
             query: query,
             headers: headers,
             body: body,
@@ -56,15 +64,23 @@ module Exa
             idempotency_key: options[:idempotency_key]
           )
 
-          _, response, stream_enum = send_request(req, max_retries: options[:max_retries] || max_retries)
-          parsed_headers = Exa::Internal::Util.normalized_headers(response.each_header.to_h)
+          begin
+            status, response, stream_enum = send_request(req, max_retries: options[:max_retries] || max_retries)
+            parsed_headers = Exa::Internal::Util.normalized_headers(response.each_header.to_h)
 
-          if stream
-            Exa::Internal::Transport::Stream.new(headers: parsed_headers, stream: stream_enum)
-          else
-            decoded = Exa::Internal::Util.decode_content(parsed_headers, stream: stream_enum)
-            coerced = coerce_response(response_model, decoded)
-            unwrap ? dig(coerced, unwrap) : coerced
+            result = if stream
+                       Exa::Internal::Transport::Stream.new(headers: parsed_headers, stream: stream_enum)
+                     else
+                       decoded = Exa::Internal::Util.decode_content(parsed_headers, stream: stream_enum)
+                       coerced = coerce_response(response_model, decoded)
+                       unwrap ? dig(coerced, unwrap) : coerced
+                     end
+
+            emit_request_complete(request_id, endpoint, start_time, status, result)
+            result
+          rescue StandardError => e
+            emit_request_error(request_id, endpoint, start_time, e)
+            raise
           end
         end
 
@@ -204,6 +220,61 @@ module Exa
           opts[:max_retries] = options[:max_retries] if options[:max_retries]
           opts[:idempotency_key] = options[:idempotency_key] if options[:idempotency_key]
           opts
+        end
+
+        def emit_request_start(request_id, endpoint, http_method, path)
+          Exa.emit(
+            "exa.request.start",
+            Exa::Instrumentation::Events::RequestStart.new(
+              request_id: request_id,
+              endpoint: endpoint,
+              http_method: http_method,
+              path: path,
+              timestamp: Process.clock_gettime(Process::CLOCK_MONOTONIC)
+            )
+          )
+        end
+
+        def emit_request_complete(request_id, endpoint, start_time, status, result)
+          duration_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000
+          cost_dollars = extract_cost_dollars(result)
+
+          Exa.emit(
+            "exa.request.complete",
+            Exa::Instrumentation::Events::RequestComplete.new(
+              request_id: request_id,
+              endpoint: endpoint,
+              duration_ms: duration_ms,
+              status: status,
+              cost_dollars: cost_dollars,
+              timestamp: Process.clock_gettime(Process::CLOCK_MONOTONIC)
+            )
+          )
+        end
+
+        def emit_request_error(request_id, endpoint, start_time, error)
+          duration_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000
+
+          Exa.emit(
+            "exa.request.error",
+            Exa::Instrumentation::Events::RequestError.new(
+              request_id: request_id,
+              endpoint: endpoint,
+              duration_ms: duration_ms,
+              error_class: error.class.name,
+              error_message: error.message,
+              timestamp: Process.clock_gettime(Process::CLOCK_MONOTONIC)
+            )
+          )
+        end
+
+        def extract_cost_dollars(result)
+          return nil unless result.respond_to?(:cost_dollars)
+          cost = result.cost_dollars
+          return nil unless cost
+
+          # CostDollars struct has a total field
+          cost.respond_to?(:total) ? cost.total : nil
         end
       end
     end
